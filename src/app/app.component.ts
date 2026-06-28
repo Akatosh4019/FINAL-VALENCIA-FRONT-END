@@ -161,7 +161,8 @@ export class AppComponent implements OnInit {
     idproducto: null as number | null,
     nombre: '',
     precio: 0,
-    stock: 0
+    stock: 0,
+    estado: true
   };
 
   clienteForm = {
@@ -578,7 +579,8 @@ export class AppComponent implements OnInit {
     const payload = {
       nombre: this.productForm.nombre,
       precio: Number(this.productForm.precio),
-      stock: Number(this.productForm.stock)
+      stock: Number(this.productForm.stock),
+      estado: this.productForm.estado ? 'A' : 'I'
     };
 
     const request = this.productForm.idproducto
@@ -600,7 +602,8 @@ export class AppComponent implements OnInit {
       idproducto: producto.idproducto,
       nombre: producto.nombre,
       precio: Number(producto.precio || 0),
-      stock: Number(producto.stock || 0)
+      stock: Number(producto.stock || 0),
+      estado: this.isProductoActive(producto)
     };
     this.adminTab.set('productos');
     this.showProductForm.set(true);
@@ -763,7 +766,8 @@ export class AppComponent implements OnInit {
       idproducto: null,
       nombre: '',
       precio: 0,
-      stock: 0
+      stock: 0,
+      estado: true
     };
   }
 
