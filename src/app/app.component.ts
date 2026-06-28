@@ -242,7 +242,7 @@ export class AppComponent implements OnInit {
     }
 
     return Array.from(groups.values()).sort((a, b) =>
-      new Date(b.fecha || 0).getTime() - new Date(a.fecha || 0).getTime()
+      this.localFechaValue(b.fecha) - this.localFechaValue(a.fecha)
     );
   });
 
@@ -850,7 +850,7 @@ export class AppComponent implements OnInit {
 
   private sortSagaLogs(logs: SagaLog[]): SagaLog[] {
     return [...logs].sort((a, b) =>
-      new Date(b.fecha || 0).getTime() - new Date(a.fecha || 0).getTime()
+      this.localFechaValue(b.fecha) - this.localFechaValue(a.fecha)
     );
   }
 
@@ -870,15 +870,55 @@ export class AppComponent implements OnInit {
     return fallback;
   }
 
+  formatFechaLocal(fecha?: string | null): string {
+    if (!fecha) {
+      return '';
+    }
+
+    const limpia = fecha.split('.')[0];
+    const [datePart, timePart] = limpia.split('T');
+    if (!datePart || !timePart) {
+      return fecha;
+    }
+
+    const [year, month, day] = datePart.split('-');
+    const [hour, minute] = timePart.split(':');
+    if (!year || !month || !day || !hour || !minute) {
+      return fecha;
+    }
+
+    return day + '/' + month + '/' + year + ' ' + hour + ':' + minute;
+  }
+
+  private localFechaValue(fecha?: string | null): number {
+    if (!fecha) {
+      return 0;
+    }
+
+    const limpia = fecha.split('.')[0];
+    const [datePart, timePart = '00:00:00'] = limpia.split('T');
+    const [year, month, day] = datePart.split('-').map((value) => Number(value));
+    const [hour = 0, minute = 0, second = 0] = timePart.split(':').map((value) => Number(value));
+
+    if (!year || !month || !day) {
+      return 0;
+    }
+
+    return Number(
+      String(year) +
+      String(month).padStart(2, '0') +
+      String(day).padStart(2, '0') +
+      String(hour).padStart(2, '0') +
+      String(minute).padStart(2, '0') +
+      String(second).padStart(2, '0')
+    );
+  }
   private readClientCheckoutError(err: unknown): string {
     if (err instanceof HttpErrorResponse) {
       const body = err.error;
-      if (err.status === 409) {
-        return body?.message || 'No se pudo completar tu compra. Intenta nuevamente.';
-      }
-      return 'No se pudo completar la compra. Intenta nuevamente.';
+      return body?.message || body?.mensaje || 'No se pudo completar tu compra. Intenta nuevamente.';
     }
-    return 'No se pudo completar la compra. Intenta nuevamente.';
+    return 'No se pudo completar tu compra. Intenta nuevamente.';
   }
   private readError(err: unknown, fallback: string): string {
     if (err instanceof HttpErrorResponse) {

@@ -237,7 +237,7 @@
                 <td>{{ venta.cantidad }}</td>
                 <td>{{ (venta.total || 0) | currency:'PEN':'symbol':'1.2-2' }}</td>
                 <td><span class="badge">{{ venta.estado || 'REGISTRADA' }}</span></td>
-                <td>{{ venta.fecha | date:'short' }}</td>
+                <td>{{ formatFechaLocal(venta.fecha) }}</td>
               </tr>
             </tbody>
           </table>
@@ -261,7 +261,7 @@
             </thead>
             <tbody>
               <tr *ngFor="let log of sagaLogs(); trackBy: trackById">
-                <td>{{ log.fecha | date:'short' }}</td>
+                <td>{{ formatFechaLocal(log.fecha) }}</td>
                 <td>{{ log.sagaId }}</td>
                 <td>{{ log.idcliente }}</td>
                 <td><span class="badge">{{ log.tipo }}</span></td>
@@ -399,6 +399,7 @@
       <aside class="checkout-panel cart-panel">
         <p class="eyebrow">Carrito Saga</p>
         <h2>Resumen</h2>
+        <div class="alert error cart-error" *ngIf="error()">{{ error() }}</div>
 
         <div class="cart-summary big">
           <div>
@@ -445,7 +446,7 @@
       <div class="purchase-list" *ngIf="purchaseGroups().length; else noPurchases">
         <article class="purchase-card" *ngFor="let compra of purchaseGroups()">
           <div class="purchase-main">
-            <span>{{ compra.fecha | date:'short' }}</span>
+            <span>{{ formatFechaLocal(compra.fecha) }}</span>
             <strong>{{ compra.ventas.length }} producto(s)</strong>
             <small>{{ compra.sagaId || compra.key }}</small>
           </div>
@@ -553,7 +554,7 @@
     <section class="preview-strip">
       <article><span>01</span><strong>Crear cuenta</strong><p>El registro crea usuario y cliente asociado.</p></article>
       <article><span>02</span><strong>Elegir producto</strong><p>El cliente ve productos con stock disponible.</p></article>
-      <article><span>03</span><strong>Comprar</strong><p>La venta usa `/ventas/saga/cliente` sin enviar idcliente.</p></article>
+      <article><span>03</span><strong>Comprar</strong><p>La venta usa `/ventas/saga/carrito/cliente` sin enviar idcliente.</p></article>
     </section>
   </main>
 
