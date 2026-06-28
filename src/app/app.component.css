@@ -2125,3 +2125,20 @@ th {
     width: 100%;
   }
 }
+
+/* Saga admin compensation test */
+.warning-button {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.saga-test-note {
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.45;
+}

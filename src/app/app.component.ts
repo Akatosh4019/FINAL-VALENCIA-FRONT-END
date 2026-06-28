@@ -492,6 +492,14 @@ export class AppComponent implements OnInit {
   }
 
   createAdminSale(): void {
+    this.runAdminSaga(false);
+  }
+
+  simulateAdminCompensationError(): void {
+    this.runAdminSaga(true);
+  }
+
+  private runAdminSaga(simularFalloDespuesDescuento: boolean): void {
     this.clearMessages();
     this.actionLoading.set(true);
     this.lastSaga.set(null);
@@ -501,17 +509,20 @@ export class AppComponent implements OnInit {
       idproducto: Number(this.adminSaleForm.idproducto),
       cantidad: Number(this.adminSaleForm.cantidad)
     };
+    const url = simularFalloDespuesDescuento
+      ? '/api/ventas/saga?simularFalloDespuesDescuento=true'
+      : '/api/ventas/saga';
 
-    this.http.post<SagaResponse>('/api/ventas/saga', payload)
+    this.http.post<SagaResponse>(url, payload)
       .pipe(finalize(() => this.actionLoading.set(false)))
       .subscribe({
         next: (response) => {
           this.lastSaga.set(response);
-          this.success.set(response.mensaje || 'Saga administrativa completada.');
+          this.success.set(response.mensaje || (simularFalloDespuesDescuento ? 'Prueba de compensacion Saga ejecutada.' : 'Saga administrativa completada.'));
           this.loadAdminDashboard();
         },
         error: (err) => {
-          this.error.set(this.readError(err, 'La Saga fallo de forma controlada.'));
+          this.error.set(this.readError(err, simularFalloDespuesDescuento ? 'La prueba de compensacion fallo de forma controlada.' : 'La Saga fallo de forma controlada.'));
           this.loadAdminDashboard();
         }
       });

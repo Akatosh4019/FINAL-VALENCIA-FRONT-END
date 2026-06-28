@@ -306,9 +306,12 @@
 
             <div class="quote"><span>Total estimado</span><strong>{{ adminEstimatedTotal() | currency:'PEN':'symbol':'1.2-2' }}</strong></div>
 
+            <div class="saga-test-note">La compensacion solo se simula desde admin; la tienda cliente no usa este parametro.</div>
+
             <div class="actions">
               <button class="primary" type="submit" [disabled]="actionLoading()">{{ actionLoading() ? 'Procesando...' : 'Registrar venta Saga' }}</button>
               <button class="danger-button" type="button" (click)="simulateAdminStockError()" [disabled]="actionLoading()">Probar stock</button>
+              <button class="warning-button" type="button" (click)="simulateAdminCompensationError()" [disabled]="actionLoading()">Probar compensacion</button>
             </div>
           </form>
 
