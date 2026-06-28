@@ -2142,3 +2142,8 @@ th {
   font-weight: 800;
   line-height: 1.45;
 }
+
+.product-state-row {
+  display: flex;
+  align-items: center;
+}

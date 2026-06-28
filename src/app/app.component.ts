@@ -34,6 +34,7 @@ interface Producto {
   descripcion?: string;
   precio: number;
   stock: number;
+  estado?: string | boolean;
 }
 
 interface Venta {
@@ -259,7 +260,7 @@ export class AppComponent implements OnInit {
   );
 
   readonly catalogoDisponible = computed(() =>
-    this.productos().filter((producto) => Number(producto.stock || 0) > 0)
+    this.productos().filter((producto) => this.isProductoActive(producto) && Number(producto.stock || 0) > 0)
   );
 
   constructor(private readonly http: HttpClient) {}
@@ -566,21 +567,27 @@ export class AppComponent implements OnInit {
     this.clearMessages();
   }
 
-  deleteProducto(producto: Producto): void {
+  deactivateProducto(producto: Producto): void {
     this.clearMessages();
+
+    if (!this.isProductoActive(producto)) {
+      this.success.set('El producto ya esta inactivo.');
+      return;
+    }
+
     this.actionLoading.set(true);
 
     this.http.delete(`/api/productos/${producto.idproducto}`)
       .pipe(finalize(() => this.actionLoading.set(false)))
       .subscribe({
         next: () => {
-          this.success.set('Producto eliminado.');
+          this.success.set('Producto desactivado correctamente.');
           this.loadAdminDashboard();
+          this.loadClientStore();
         },
-        error: (err) => this.error.set(this.readError(err, 'No se pudo eliminar el producto.'))
+        error: (err) => this.error.set(this.readError(err, 'No se pudo desactivar el producto.'))
       });
   }
-
   saveCliente(): void {
     this.clearMessages();
     this.actionLoading.set(true);
@@ -802,6 +809,14 @@ export class AppComponent implements OnInit {
 
   isClienteActive(cliente: Cliente): boolean {
     return cliente.estado === true || cliente.estado === 'A' || cliente.estado === 'ACTIVO';
+  }
+
+  isProductoActive(producto: Producto): boolean {
+    return producto.estado === undefined || producto.estado === null || producto.estado === true || producto.estado === 'A' || producto.estado === 'ACTIVO';
+  }
+
+  productoEstadoLabel(producto: Producto): string {
+    return this.isProductoActive(producto) ? 'Activo' : 'Inactivo';
   }
 
   isProtectedAdminCliente(cliente: Pick<Cliente, 'idcliente' | 'correo'>): boolean {

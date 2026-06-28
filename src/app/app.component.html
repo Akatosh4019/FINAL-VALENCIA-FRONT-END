@@ -82,7 +82,7 @@
         <div class="summary-grid">
           <div>
             <h3>Clientes</h3>
-            <p>Crear, editar, eliminar y consultar clientes registrados.</p>
+            <p>Crear, editar, desactivar y consultar clientes registrados.</p>
           </div>
           <div>
             <h3>Productos</h3>
@@ -208,11 +208,14 @@
               <p>{{ producto.descripcion || 'Sin descripcion' }}</p>
             </div>
             <strong>{{ producto.precio | currency:'PEN':'symbol':'1.2-2' }}</strong>
+            <div class="product-state-row">
+              <span class="badge" [class.ok]="isProductoActive(producto)" [class.off]="!isProductoActive(producto)">{{ productoEstadoLabel(producto) }}</span>
+            </div>
             <p>Stock disponible</p>
             <b [class.low]="producto.stock < 10">{{ producto.stock }}</b>
             <div class="row-actions">
               <button class="mini" type="button" (click)="editProducto(producto)">Editar</button>
-              <button class="mini danger" type="button" (click)="deleteProducto(producto)" [disabled]="actionLoading()">Eliminar</button>
+              <button class="mini danger" type="button" (click)="deactivateProducto(producto)" [disabled]="actionLoading() || !isProductoActive(producto)">Desactivar producto</button>
             </div>
           </article>
         </div>
@@ -296,7 +299,7 @@
 
             <label>Producto
               <select name="adminIdproducto" [(ngModel)]="adminSaleForm.idproducto">
-                <option *ngFor="let producto of productos()" [ngValue]="producto.idproducto">
+                <option *ngFor="let producto of catalogoDisponible()" [ngValue]="producto.idproducto">
                   {{ producto.idproducto }} - {{ producto.nombre }} (stock {{ producto.stock }})
                 </option>
               </select>
