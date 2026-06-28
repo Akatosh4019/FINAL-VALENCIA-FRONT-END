@@ -841,7 +841,7 @@ export class AppComponent implements OnInit {
     if (err instanceof HttpErrorResponse) {
       const body = err.error;
       if (err.status === 409) {
-        return body?.message || 'No se pudo completar la compra: no hay stock suficiente.';
+        return body?.message || 'No se pudo completar tu compra. Intenta nuevamente.';
       }
       return 'No se pudo completar la compra. Intenta nuevamente.';
     }
