@@ -449,6 +449,9 @@ export class AppComponent implements OnInit {
           this.success.set('');
           this.error.set(this.readClientCheckoutError(err));
           this.loadClientStore(false);
+          if (this.isAdmin()) {
+            this.loadAdminDashboard(false);
+          }
         }
       });
   }
@@ -754,6 +757,10 @@ export class AppComponent implements OnInit {
 
   selectAdminTab(tab: AdminTab): void {
     this.adminTab.set(tab);
+    if (tab === 'logs') {
+      this.loadAdminDashboard();
+      return;
+    }
     this.clearMessages();
   }
 

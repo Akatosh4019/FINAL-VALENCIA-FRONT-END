@@ -255,6 +255,7 @@
             <p class="eyebrow">Auditoria Saga</p>
             <h2>Saga logs</h2>
           </div>
+          <button class="secondary" type="button" (click)="loadAdminDashboard()" [disabled]="loading()">{{ loading() ? 'Actualizando...' : 'Actualizar logs' }}</button>
         </div>
         <div class="table-wrap">
           <table>
