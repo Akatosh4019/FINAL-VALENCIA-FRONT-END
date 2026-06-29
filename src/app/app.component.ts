@@ -117,6 +117,7 @@ export class AppComponent implements OnInit {
 
   readonly clientes = signal<Cliente[]>([]);
   readonly productos = signal<Producto[]>([]);
+  readonly productSaleCounts = signal<Record<number, number>>({});
   readonly ventas = signal<Venta[]>([]);
   readonly misVentas = signal<Venta[]>([]);
   readonly sagaLogs = signal<SagaLog[]>([]);
@@ -316,6 +317,7 @@ export class AppComponent implements OnInit {
     this.idcliente.set(null);
     this.clientes.set([]);
     this.productos.set([]);
+    this.productSaleCounts.set({});
     this.ventas.set([]);
     this.misVentas.set([]);
     this.sagaLogs.set([]);
@@ -343,7 +345,7 @@ export class AppComponent implements OnInit {
       this.safeRequest(this.http.get<Venta[] | { value: Venta[] }>('/api/ventas')),
       this.safeRequest(this.http.get<SagaLog[] | { value: SagaLog[] }>('/api/ventas/saga-logs'))
     ])
-      .then(([clientes, productos, ventas, sagaLogs]) => {
+      .then(async ([clientes, productos, ventas, sagaLogs]) => {
         let firstError: unknown = null;
 
         if (clientes.ok) {
@@ -353,7 +355,9 @@ export class AppComponent implements OnInit {
         }
 
         if (productos.ok) {
-          this.productos.set(this.asArray<Producto>(productos.value));
+          const productosList = this.asArray<Producto>(productos.value);
+          this.productos.set(productosList);
+          await this.loadProductSaleCounts(productosList);
         } else {
           firstError = firstError || productos.error;
         }
@@ -390,6 +394,18 @@ export class AppComponent implements OnInit {
       .finally(() => this.loading.set(false));
   }
 
+  private async loadProductSaleCounts(productos = this.productos()): Promise<void> {
+    const entries = await Promise.all(productos.map(async (producto) => {
+      try {
+        const count = await firstValueFrom(this.http.get<number>(`/api/ventas/producto/${producto.idproducto}/conteo`));
+        return [producto.idproducto, Number(count || 0)] as const;
+      } catch {
+        return [producto.idproducto, 1] as const;
+      }
+    }));
+
+    this.productSaleCounts.set(Object.fromEntries(entries));
+  }
   loadClientStore(clearExistingMessages = true): void {
     if (clearExistingMessages) {
       this.clearMessages();
@@ -620,7 +636,14 @@ export class AppComponent implements OnInit {
 
     this.actionLoading.set(true);
 
-    this.http.delete(`/api/productos/${producto.idproducto}`)
+    const payload = {
+      nombre: producto.nombre,
+      precio: Number(producto.precio || 0),
+      stock: Number(producto.stock || 0),
+      estado: 'I'
+    };
+
+    this.http.put<Producto>(`/api/productos/${producto.idproducto}`, payload)
       .pipe(finalize(() => this.actionLoading.set(false)))
       .subscribe({
         next: () => {
@@ -658,6 +681,27 @@ export class AppComponent implements OnInit {
           this.loadClientStore();
         },
         error: (err) => this.error.set(this.readError(err, 'No se pudo activar el producto.'))
+      });
+  }
+  deleteProducto(producto: Producto): void {
+    this.clearMessages();
+
+    if (!this.canDeleteProducto(producto)) {
+      this.error.set('No se puede eliminar el producto porque ya tiene ventas registradas. Puedes editarlo o desactivarlo.');
+      return;
+    }
+
+    this.actionLoading.set(true);
+
+    this.http.delete(`/api/productos/${producto.idproducto}`)
+      .pipe(finalize(() => this.actionLoading.set(false)))
+      .subscribe({
+        next: () => {
+          this.success.set('Producto eliminado correctamente.');
+          this.loadAdminDashboard();
+          this.loadClientStore();
+        },
+        error: (err) => this.error.set(this.readSagaError(err, 'No se pudo eliminar el producto.'))
       });
   }
   saveCliente(): void {
@@ -895,6 +939,14 @@ export class AppComponent implements OnInit {
     return this.isProductoActive(producto) ? 'Activo' : 'Inactivo';
   }
 
+  productoVentaCount(producto: Producto): number {
+    return this.productSaleCounts()[producto.idproducto] ?? 1;
+  }
+
+  canDeleteProducto(producto: Producto): boolean {
+    return this.productoVentaCount(producto) === 0;
+  }
+
   isProtectedAdminCliente(cliente: Pick<Cliente, 'idcliente' | 'correo'>): boolean {
     return Number(cliente.idcliente) === 1 || cliente.correo === 'admin@saga.local';
   }
@@ -1002,7 +1054,6 @@ export class AppComponent implements OnInit {
     if (!datePart || !timePart) {
       return fecha;
     }
-
 
     const [year, month, day] = datePart.split('-');
     const [hour, minute] = timePart.split(':');
