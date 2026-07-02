@@ -2235,3 +2235,463 @@ th {
   background: #dcfce7;
   color: #047857;
 }
+
+/* Valencia visual refresh */
+.public-page {
+  background:
+    radial-gradient(circle at 14% 14%, rgba(57, 211, 200, 0.22), transparent 28%),
+    radial-gradient(circle at 82% 16%, rgba(215, 166, 66, 0.18), transparent 26%),
+    radial-gradient(circle at 52% 96%, rgba(118, 81, 201, 0.16), transparent 34%),
+    linear-gradient(135deg, #071522 0%, #0d1b2a 47%, #182234 100%);
+}
+
+.public-page::before {
+  opacity: 0.2;
+  background-image:
+    linear-gradient(rgba(215, 166, 66, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(57, 211, 200, 0.14) 1px, transparent 1px);
+  animation: gridBreath 12s ease-in-out infinite;
+}
+
+.valencia-star {
+  opacity: 0.42;
+  filter:
+    drop-shadow(0 0 30px rgba(57, 211, 200, 0.28))
+    drop-shadow(0 0 18px rgba(215, 166, 66, 0.18));
+  animation: starDrift 14s ease-in-out infinite, starGlow 6.5s ease-in-out infinite;
+}
+
+.star-line,
+.star-core {
+  stroke: rgba(83, 232, 221, 0.78);
+}
+
+.star-down {
+  stroke: rgba(215, 166, 66, 0.68);
+}
+
+.admin-peek {
+  min-height: 40px;
+  padding: 0 16px;
+  border-color: rgba(215, 166, 66, 0.34);
+  background: rgba(13, 27, 42, 0.72);
+  color: #fff7df;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22);
+  animation: adminPeekIn 520ms ease both;
+}
+
+.admin-peek span {
+  position: relative;
+  z-index: 1;
+}
+
+.admin-peek::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(57, 211, 200, 0.18), rgba(215, 166, 66, 0.16));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.admin-peek:hover::before {
+  opacity: 1;
+}
+
+.hero-panel h1,
+.shop-stage h1,
+.topbar h1 {
+  text-wrap: balance;
+}
+
+.hero-metrics span,
+.preview-strip article,
+.access-card,
+.shop-header,
+.store-section-title,
+.store-product,
+.checkout-panel,
+.history-panel,
+.receipt-card,
+.stats article,
+.panel,
+.product,
+.sale-card,
+.admin-client-card,
+.client-state-board article,
+.topbar,
+.sidebar {
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    border-color 0.22s ease,
+    background 0.22s ease;
+}
+
+.hero-metrics span:hover,
+.preview-strip article:hover,
+.store-section-title:hover,
+.stats article:hover,
+.panel:hover,
+.product:hover,
+.admin-client-card:hover {
+  transform: translateY(-3px);
+}
+
+.access-card,
+.admin-modal,
+.checkout-panel,
+.client-state-board article,
+.topbar,
+.sidebar {
+  border-color: rgba(215, 166, 66, 0.22);
+  background:
+    linear-gradient(155deg, rgba(13, 27, 42, 0.96), rgba(20, 38, 56, 0.88)),
+    linear-gradient(135deg, rgba(57, 211, 200, 0.1), rgba(215, 166, 66, 0.08));
+}
+
+.brand-mark,
+.client-avatar,
+.product-orb {
+  background: linear-gradient(135deg, #0f9da6, #d7a642);
+  box-shadow: 0 14px 32px rgba(15, 157, 166, 0.24);
+}
+
+.primary {
+  background: linear-gradient(135deg, #2854c5, #0f9da6 52%, #078b65);
+  box-shadow: 0 12px 28px rgba(15, 157, 166, 0.22);
+}
+
+.primary:hover:not(:disabled) {
+  box-shadow: 0 18px 38px rgba(15, 157, 166, 0.3);
+}
+
+.secondary {
+  background: #edf7fb;
+  color: #2854c5;
+  border: 1px solid rgba(40, 84, 197, 0.12);
+}
+
+button {
+  position: relative;
+  overflow: hidden;
+}
+
+button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.26), transparent);
+  transform: translateX(-120%);
+  transition: transform 0.48s ease;
+}
+
+button:hover:not(:disabled)::after {
+  transform: translateX(120%);
+}
+
+input,
+select {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+input:focus,
+select:focus {
+  border-color: #0f9da6;
+  box-shadow: 0 0 0 4px rgba(57, 211, 200, 0.15);
+}
+
+.admin-login-backdrop {
+  background:
+    radial-gradient(circle at 50% 25%, rgba(57, 211, 200, 0.22), transparent 28%),
+    radial-gradient(circle at 50% 70%, rgba(215, 166, 66, 0.16), transparent 34%),
+    rgba(7, 21, 34, 0.86);
+}
+
+.admin-modal {
+  width: min(460px, 100%);
+  gap: 18px;
+  padding: 34px;
+  text-align: left;
+  border-color: rgba(215, 166, 66, 0.34);
+  animation: adminModalIn 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.admin-modal::before {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(215, 166, 66, 0.2), transparent 36%),
+    linear-gradient(135deg, rgba(57, 211, 200, 0.16), transparent 42%, rgba(215, 166, 66, 0.14));
+}
+
+.admin-modal-mark {
+  width: 82px;
+  height: 82px;
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  border: 1px solid rgba(215, 166, 66, 0.32);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 20px 44px rgba(0, 0, 0, 0.22);
+}
+
+.admin-modal-mark svg {
+  width: 58px;
+  height: 58px;
+  fill: rgba(13, 27, 42, 0.18);
+  stroke: #53e8dd;
+  stroke-width: 5;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 14px rgba(83, 232, 221, 0.38));
+  animation: adminStarSpin 9s linear infinite;
+}
+
+.admin-modal-mark path + path {
+  stroke: #d7a642;
+}
+
+.admin-modal-copy {
+  display: grid;
+  gap: 6px;
+  text-align: center;
+}
+
+.admin-modal-copy span {
+  color: #bdd0e4;
+  line-height: 1.55;
+}
+
+.admin-modal label {
+  color: #d9e8f6;
+}
+
+.admin-modal input {
+  border-color: rgba(216, 226, 238, 0.26);
+  background: rgba(255, 255, 255, 0.97);
+}
+
+.admin-modal .primary.full {
+  margin-top: 4px;
+}
+
+.close {
+  color: #fff7df;
+  border-color: rgba(215, 166, 66, 0.24);
+}
+
+.client-app {
+  background:
+    radial-gradient(circle at 10% 8%, rgba(57, 211, 200, 0.18), transparent 28%),
+    radial-gradient(circle at 88% 8%, rgba(215, 166, 66, 0.14), transparent 28%),
+    linear-gradient(180deg, #071522 0%, #0d1b2a 360px, #edf4f7 360px, #f7fafc 100%);
+}
+
+.shell {
+  background:
+    radial-gradient(circle at 15% 8%, rgba(57, 211, 200, 0.16), transparent 28%),
+    radial-gradient(circle at 91% 12%, rgba(215, 166, 66, 0.14), transparent 30%),
+    linear-gradient(135deg, #071522 0%, #0d1b2a 45%, #172235 100%);
+}
+
+.store-product,
+.admin-products .product,
+.admin-client-card,
+.panel,
+.stats article,
+.history-panel,
+.receipt-card,
+.store-section-title {
+  background: linear-gradient(180deg, #ffffff, #f8fbfd);
+  border-color: rgba(202, 215, 228, 0.9);
+}
+
+.store-product::after,
+.stats article::after {
+  background: radial-gradient(circle, rgba(215, 166, 66, 0.15), transparent 68%);
+}
+
+.product-meta strong,
+.product strong,
+.cart-summary.big strong,
+.checkout-panel .quote strong,
+.receipt-total strong,
+.client-state-board strong {
+  color: #39d3c8;
+}
+
+.eyebrow,
+.preview-strip span,
+.form-title span {
+  color: #0f9da6;
+}
+
+.admin-lock,
+.admin-badge {
+  background: #fef6df;
+  color: #9a6b12;
+}
+
+.badge {
+  background: #edf2ff;
+  color: #2854c5;
+}
+
+.badge.ok {
+  background: #daf7ed;
+  color: #078b65;
+}
+
+.alert.success {
+  background: #e8fbf5;
+  color: #067052;
+  border-color: #a9ead8;
+}
+
+.alert.error {
+  background: #fff1f3;
+  color: #b4243f;
+  border-color: #f5b8c2;
+}
+
+.nav button,
+.client-nav button,
+.switcher button {
+  isolation: isolate;
+}
+
+.nav button.active,
+.nav button:hover:not(:disabled) {
+  background: rgba(57, 211, 200, 0.15);
+  border-color: rgba(215, 166, 66, 0.26);
+}
+
+.switcher button.active,
+.client-nav button.active {
+  color: #0d1b2a;
+  background: linear-gradient(135deg, #ffffff, #e9fbf8);
+}
+
+.store-product,
+.admin-client-card,
+.admin-products .product,
+.purchase-card,
+.cart-item,
+.receipt-items article,
+.preview-strip article,
+.hero-metrics span,
+.stats article {
+  animation: softEnter 420ms ease both;
+}
+
+.store-product:nth-child(2n),
+.admin-client-card:nth-child(2n),
+.admin-products .product:nth-child(2n) {
+  animation-delay: 55ms;
+}
+
+.store-product:nth-child(3n),
+.admin-client-card:nth-child(3n),
+.admin-products .product:nth-child(3n) {
+  animation-delay: 110ms;
+}
+
+@keyframes adminModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes adminPeekIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes adminStarSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes starGlow {
+  0%, 100% {
+    opacity: 0.34;
+  }
+  50% {
+    opacity: 0.52;
+  }
+}
+
+@keyframes gridBreath {
+  0%, 100% {
+    opacity: 0.14;
+  }
+  50% {
+    opacity: 0.24;
+  }
+}
+
+@keyframes softEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-page::before,
+  .admin-peek,
+  .admin-modal,
+  .admin-modal-mark svg,
+  .store-product,
+  .admin-client-card,
+  .admin-products .product,
+  .purchase-card,
+  .cart-item,
+  .receipt-items article,
+  .preview-strip article,
+  .hero-metrics span,
+  .stats article {
+    animation: none;
+  }
+
+  button::after {
+    display: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .admin-peek {
+    top: 14px;
+    right: 14px;
+    min-height: 36px;
+    padding: 0 12px;
+  }
+
+  .admin-modal {
+    padding: 28px 22px 24px;
+  }
+
+  .admin-modal-mark {
+    width: 70px;
+    height: 70px;
+  }
+}

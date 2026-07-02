@@ -106,7 +106,6 @@ export class AppComponent implements OnInit {
   readonly authMode = signal<'login' | 'register'>('login');
   readonly showAdminLogin = signal(false);
   readonly showProductForm = signal(false);
-  readonly actingAsClient = signal(false);
   readonly loading = signal(false);
   readonly actionLoading = signal(false);
   readonly error = signal('');
@@ -180,7 +179,6 @@ export class AppComponent implements OnInit {
   readonly isLoggedIn = computed(() => Boolean(this.token()));
   readonly isAdmin = computed(() => this.role() === 'ROLE_ADMIN');
   readonly isClient = computed(() => this.role() === 'ROLE_CLIENTE');
-  readonly canUseClientStore = computed(() => Boolean(this.idcliente()) && (this.isClient() || this.isAdmin()));
 
   readonly selectedAdminCliente = computed(() =>
     this.clientes().find((cliente) => cliente.idcliente === Number(this.adminSaleForm.idcliente))
@@ -217,9 +215,17 @@ export class AppComponent implements OnInit {
   );
 
   readonly purchaseGroups = computed<PurchaseGroup[]>(() => {
+    return this.groupVentasByPurchase(this.misVentas());
+  });
+
+  readonly adminPurchaseGroups = computed<PurchaseGroup[]>(() => {
+    return this.groupVentasByPurchase(this.ventas());
+  });
+
+  private groupVentasByPurchase(ventas: Venta[]): PurchaseGroup[] {
     const groups = new Map<string, PurchaseGroup>();
 
-    for (const venta of this.misVentas()) {
+    for (const venta of ventas) {
       const key = venta.sagaId || `venta-${venta.idventa}`;
       const producto = this.productos().find((item) => item.idproducto === venta.idproducto);
       const total = Number(venta.total ?? ((producto?.precio || 0) * Number(venta.cantidad || 0)));
@@ -245,7 +251,7 @@ export class AppComponent implements OnInit {
     return Array.from(groups.values()).sort((a, b) =>
       this.localFechaValue(b.fecha) - this.localFechaValue(a.fecha)
     );
-  });
+  }
 
   readonly activeClientes = computed(() =>
     this.clientes().filter((cliente) => this.isClienteActive(cliente)).length
@@ -268,7 +274,6 @@ export class AppComponent implements OnInit {
   ngOnInit(): void {
     if (this.isAdmin()) {
       this.loadAdminDashboard();
-      this.loadClientStore();
     }
     if (this.isClient()) {
       this.loadClientStore();
@@ -328,7 +333,6 @@ export class AppComponent implements OnInit {
     this.adminTab.set('resumen');
     this.clientTab.set('tienda');
     this.showAdminLogin.set(false);
-    this.actingAsClient.set(false);
     this.clearMessages();
     this.clearAuthMessages();
   }
@@ -438,7 +442,7 @@ export class AppComponent implements OnInit {
 
   createClientSale(producto?: Producto): void {
     if (producto) {
-      this.addToCart(producto, this.productQuantities[producto.idproducto] || 1);
+      this.addToCart(producto, this.productQuantities[producto.idproducto] ?? 1);
       return;
     }
 
@@ -450,7 +454,18 @@ export class AppComponent implements OnInit {
 
   addToCart(producto: Producto, cantidad = 1): void {
     this.clearMessages();
-    const safeQuantity = Math.max(1, Number(cantidad || 1));
+    const safeQuantity = this.readWholeQuantity(cantidad);
+
+    if (!safeQuantity) {
+      this.error.set('La cantidad debe ser un numero entero. No puedes comprar 1.5 productos.');
+      return;
+    }
+
+    if (safeQuantity > Number(producto.stock || 0)) {
+      this.error.set('La cantidad no puede superar el stock disponible.');
+      return;
+    }
+
     const current = [...this.cart()];
     const existing = current.find((item) => item.producto.idproducto === producto.idproducto);
 
@@ -465,7 +480,13 @@ export class AppComponent implements OnInit {
   }
 
   updateCartItem(producto: Producto, cantidad: number): void {
-    const safeQuantity = Math.max(1, Number(cantidad || 1));
+    const safeQuantity = this.readWholeQuantity(cantidad);
+
+    if (!safeQuantity) {
+      this.error.set('La cantidad debe ser un numero entero.');
+      return;
+    }
+
     this.cart.set(this.cart().map((item) =>
       item.producto.idproducto === producto.idproducto ? { ...item, cantidad: safeQuantity } : item
     ));
@@ -480,6 +501,11 @@ export class AppComponent implements OnInit {
 
     if (!this.cart().length) {
       this.error.set('Agrega al menos un producto al carrito.');
+      return;
+    }
+
+    if (this.cart().some((item) => !this.isWholeQuantity(item.cantidad))) {
+      this.error.set('Revisa el carrito: todas las cantidades deben ser numeros enteros.');
       return;
     }
 
@@ -551,19 +577,54 @@ export class AppComponent implements OnInit {
     this.selectedReceipt.set(null);
   }
 
-  showAdminPanel(): void {
-    this.actingAsClient.set(false);
-    this.loadAdminDashboard();
-  }
-
-  showClientStore(): void {
-    this.actingAsClient.set(true);
-    this.clientTab.set('tienda');
-    this.loadClientStore();
-  }
-
   createAdminSale(): void {
     this.runAdminSaga(false);
+  }
+
+  createAdminClientCheckout(): void {
+    this.clearMessages();
+    const producto = this.selectedAdminProducto();
+    const safeQuantity = this.readWholeQuantity(this.adminSaleForm.cantidad);
+
+    if (!producto) {
+      this.error.set('Selecciona un producto para comprar como cliente.');
+      return;
+    }
+
+    if (!safeQuantity) {
+      this.error.set('La cantidad de la compra cliente debe ser un numero entero.');
+      return;
+    }
+
+    this.adminSaleForm.cantidad = safeQuantity;
+    this.actionLoading.set(true);
+    this.lastSaga.set(null);
+
+    const purchasedItems = [{ producto, cantidad: safeQuantity }];
+    const payload = {
+      items: [{
+        idproducto: producto.idproducto,
+        cantidad: safeQuantity
+      }]
+    };
+
+    this.http.post<SagaResponse>('/api/ventas/saga/carrito/cliente', payload)
+      .pipe(finalize(() => this.actionLoading.set(false)))
+      .subscribe({
+        next: (response) => {
+          this.lastSaga.set(response);
+          this.receiptCart.set(purchasedItems);
+          this.success.set(response.mensaje || 'Compra cliente completada desde Saga admin.');
+          this.loadClientStore(false);
+          this.loadAdminDashboard(false);
+        },
+        error: (err) => {
+          this.success.set('');
+          this.error.set(this.readClientCheckoutError(err));
+          this.loadClientStore(false);
+          this.loadAdminDashboard(false);
+        }
+      });
   }
 
   simulateAdminCompensationError(): void {
@@ -572,13 +633,21 @@ export class AppComponent implements OnInit {
 
   private runAdminSaga(simularFalloDespuesDescuento: boolean): void {
     this.clearMessages();
+    const safeQuantity = this.readWholeQuantity(this.adminSaleForm.cantidad);
+
+    if (!safeQuantity) {
+      this.error.set('La cantidad de la venta debe ser un numero entero.');
+      return;
+    }
+
+    this.adminSaleForm.cantidad = safeQuantity;
     this.actionLoading.set(true);
     this.lastSaga.set(null);
 
     const payload = {
       idcliente: Number(this.adminSaleForm.idcliente),
       idproducto: Number(this.adminSaleForm.idproducto),
-      cantidad: Number(this.adminSaleForm.cantidad)
+      cantidad: safeQuantity
     };
     const url = simularFalloDespuesDescuento
       ? '/api/ventas/saga?simularFalloDespuesDescuento=true'
@@ -858,6 +927,19 @@ export class AppComponent implements OnInit {
     this.clearMessages();
   }
 
+  blockDecimalInput(event: KeyboardEvent): void {
+    if (['.', ',', 'e', 'E', '+', '-'].includes(event.key)) {
+      event.preventDefault();
+    }
+  }
+
+  blockDecimalPaste(event: ClipboardEvent): void {
+    const pasted = event.clipboardData?.getData('text') ?? '';
+    if (!/^\d+$/.test(pasted.trim())) {
+      event.preventDefault();
+    }
+  }
+
   trackById(_index: number, item: Trackable): number {
     if ('id' in item) {
       return item.id;
@@ -871,6 +953,10 @@ export class AppComponent implements OnInit {
     return item.idcliente;
   }
 
+  trackByPurchaseKey(_index: number, item: PurchaseGroup): string {
+    return item.key;
+  }
+
   private doLogin(credentials: { username: string; password: string }, context: 'client' | 'admin'): void {
     this.clearAuthMessages();
     this.actionLoading.set(true);
@@ -879,6 +965,18 @@ export class AppComponent implements OnInit {
       .pipe(finalize(() => this.actionLoading.set(false)))
       .subscribe({
         next: (response) => {
+          const responseRole = response.rol || 'ROLE_CLIENTE';
+
+          if (context === 'client' && responseRole === 'ROLE_ADMIN') {
+            this.setAuthError(context, 'Esta cuenta es de administrador. Usa el acceso Administrador.');
+            return;
+          }
+
+          if (context === 'admin' && responseRole !== 'ROLE_ADMIN') {
+            this.setAuthError(context, 'Esta cuenta no tiene permisos de administrador.');
+            return;
+          }
+
           this.storeSession(response, credentials.username);
           if (context === 'client') {
             this.clientAuthSuccess.set('Sesion iniciada correctamente.');
@@ -886,7 +984,6 @@ export class AppComponent implements OnInit {
 
           if (this.isAdmin()) {
             this.showAdminLogin.set(false);
-            this.actingAsClient.set(false);
             this.loadAdminDashboard();
             return;
           }
@@ -973,6 +1070,20 @@ export class AppComponent implements OnInit {
     return this.isClienteActive(cliente) ? 'Activo' : 'Inactivo';
   }
 
+  clienteNombre(idcliente?: number | null): string {
+    const id = Number(idcliente || 0);
+    const cliente = this.clientes().find((item) => Number(item.idcliente) === id);
+    return cliente ? `${cliente.nombres} ${cliente.apellidos}`.trim() : `Cliente #${id || '-'}`;
+  }
+
+  purchaseClienteNombre(compra: PurchaseGroup): string {
+    return this.clienteNombre(compra.ventas[0]?.idcliente);
+  }
+
+  purchaseCantidadTotal(compra: PurchaseGroup): number {
+    return compra.ventas.reduce((sum, venta) => sum + Number(venta.cantidad || 0), 0);
+  }
+
   clearMessages(): void {
     this.error.set('');
     this.success.set('');
@@ -1021,6 +1132,20 @@ export class AppComponent implements OnInit {
     return [...logs].sort((a, b) =>
       this.localFechaValue(b.fecha) - this.localFechaValue(a.fecha)
     );
+  }
+
+  private readWholeQuantity(value: unknown): number | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const quantity = Number(value);
+    return this.isWholeQuantity(quantity) ? quantity : null;
+  }
+
+  private isWholeQuantity(value: unknown): boolean {
+    const quantity = Number(value);
+    return Number.isInteger(quantity) && quantity >= 1;
   }
 
   private readSagaError(err: unknown, fallback: string): string {

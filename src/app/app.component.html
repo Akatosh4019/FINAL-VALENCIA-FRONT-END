@@ -1,5 +1,5 @@
 <ng-container *ngIf="isLoggedIn(); else publicView">
-  <main class="shell" *ngIf="isAdmin() && !actingAsClient(); else clientDashboard">
+  <main class="shell" *ngIf="isAdmin(); else clientDashboard">
     <aside class="sidebar">
       <div class="brand">
         <div class="brand-mark">VS</div>
@@ -16,7 +16,6 @@
         <button [class.active]="adminTab() === 'ventas'" (click)="selectAdminTab('ventas')">Ventas</button>
         <button [class.active]="adminTab() === 'logs'" (click)="selectAdminTab('logs')">Saga logs</button>
         <button [class.active]="adminTab() === 'saga'" (click)="selectAdminTab('saga')">Saga admin</button>
-        <button type="button" (click)="showClientStore()">Tienda cliente</button>
       </nav>
 
       <div class="session">
@@ -233,18 +232,18 @@
           <table>
             <thead>
               <tr>
-                <th>ID</th><th>Cliente</th><th>Producto</th><th>Cantidad</th><th>Total</th><th>Estado</th><th>Fecha</th>
+                <th>Compra</th><th>Cliente</th><th>Productos</th><th>Cantidad total</th><th>Total</th><th>Estado</th><th>Fecha</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let venta of ventas(); trackBy: trackById">
-                <td>{{ venta.idventa }}</td>
-                <td>{{ venta.idcliente }}</td>
-                <td>{{ venta.idproducto }}</td>
-                <td>{{ venta.cantidad }}</td>
-                <td>{{ (venta.total || 0) | currency:'PEN':'symbol':'1.2-2' }}</td>
-                <td><span class="badge">{{ venta.estado || 'REGISTRADA' }}</span></td>
-                <td>{{ formatFechaLocal(venta.fecha) }}</td>
+              <tr *ngFor="let compra of adminPurchaseGroups(); trackBy: trackByPurchaseKey">
+                <td>{{ compra.sagaId || compra.key }}</td>
+                <td>{{ purchaseClienteNombre(compra) }}</td>
+                <td>{{ compra.ventas.length }} producto(s)</td>
+                <td>{{ purchaseCantidadTotal(compra) }}</td>
+                <td>{{ compra.total | currency:'PEN':'symbol':'1.2-2' }}</td>
+                <td><span class="badge">{{ compra.estado || 'REGISTRADA' }}</span></td>
+                <td>{{ formatFechaLocal(compra.fecha) }}</td>
               </tr>
             </tbody>
           </table>
@@ -271,7 +270,7 @@
               <tr *ngFor="let log of sagaLogs(); trackBy: trackById">
                 <td>{{ formatFechaLocal(log.fecha) }}</td>
                 <td>{{ log.sagaId }}</td>
-                <td>{{ log.idcliente }}</td>
+                <td>{{ clienteNombre(log.idcliente) }}</td>
                 <td><span class="badge">{{ log.tipo }}</span></td>
                 <td><span class="badge" [class.ok]="log.estado === 'COMPLETADA'">{{ log.estado }}</span></td>
                 <td>{{ log.pasoFallido || '-' }}</td>
@@ -310,14 +309,15 @@
               </select>
             </label>
 
-            <label>Cantidad<input type="number" min="1" name="adminCantidad" [(ngModel)]="adminSaleForm.cantidad"></label>
+            <label>Cantidad<input type="number" min="1" step="1" inputmode="numeric" pattern="[0-9]*" name="adminCantidad" [(ngModel)]="adminSaleForm.cantidad" (keydown)="blockDecimalInput($event)" (paste)="blockDecimalPaste($event)"></label>
 
             <div class="quote"><span>Total estimado</span><strong>{{ adminEstimatedTotal() | currency:'PEN':'symbol':'1.2-2' }}</strong></div>
 
-            <div class="saga-test-note">La compensacion solo se simula desde admin; la tienda cliente no usa este parametro.</div>
+            <div class="saga-test-note">Compra cliente usa el mismo endpoint que la tienda. Sube la cantidad por encima del stock para probar el error real de stock.</div>
 
             <div class="actions">
               <button class="primary" type="submit" [disabled]="actionLoading()">{{ actionLoading() ? 'Procesando...' : 'Registrar venta Saga' }}</button>
+              <button class="secondary" type="button" (click)="createAdminClientCheckout()" [disabled]="actionLoading()">Comprar como cliente</button>
               <button class="danger-button" type="button" (click)="simulateAdminStockError()" [disabled]="actionLoading()">Probar stock</button>
               <button class="warning-button" type="button" (click)="simulateAdminCompensationError()" [disabled]="actionLoading()">Probar compensacion</button>
             </div>
@@ -348,7 +348,6 @@
       <nav class="client-nav">
         <button [class.active]="clientTab() === 'tienda'" (click)="selectClientTab('tienda')">Tienda</button>
         <button [class.active]="clientTab() === 'historial'" (click)="selectClientTab('historial')">Mis compras</button>
-        <button *ngIf="isAdmin()" class="ghost dark" type="button" (click)="showAdminPanel()">Panel admin</button>
         <button class="ghost dark" (click)="confirmLogout()">Salir</button>
       </nav>
     </header>
@@ -393,7 +392,7 @@
             <div class="product-buy-row">
               <label>
                 Cantidad
-                <input type="number" min="1" [max]="producto.stock" [(ngModel)]="productQuantities[producto.idproducto]" [name]="'qty-' + producto.idproducto" placeholder="1">
+                <input type="number" min="1" step="1" inputmode="numeric" pattern="[0-9]*" [max]="producto.stock" [(ngModel)]="productQuantities[producto.idproducto]" [name]="'qty-' + producto.idproducto" placeholder="1" (keydown)="blockDecimalInput($event)" (paste)="blockDecimalPaste($event)">
               </label>
               <button class="primary" type="button" (click)="createClientSale(producto)" [disabled]="actionLoading()">
                 Agregar
@@ -508,7 +507,9 @@
 
 <ng-template #publicView>
   <main class="public-page">
-    <button class="admin-peek" type="button" (click)="showAdminLogin.set(true)">Admin</button>
+    <button class="admin-peek" type="button" (click)="showAdminLogin.set(true)">
+      <span>Administrador</span>
+    </button>
     <div class="valencia-star" aria-hidden="true">
       <svg viewBox="0 0 600 600" focusable="false">
         <path class="star-line star-up" d="M300 62 518 440H82Z"></path>
@@ -572,11 +573,20 @@
     </section>
   </main>
 
-  <div class="modal-backdrop" *ngIf="showAdminLogin()">
+  <div class="modal-backdrop admin-login-backdrop" *ngIf="showAdminLogin()">
     <form class="admin-modal" (ngSubmit)="doAdminLogin()">
       <button class="close" type="button" (click)="showAdminLogin.set(false); clearAuthMessages()">x</button>
-      <p class="eyebrow">Acceso reservado</p>
-      <h2>Administrador</h2>
+      <div class="admin-modal-mark" aria-hidden="true">
+        <svg viewBox="0 0 120 120" focusable="false">
+          <path d="M60 13 103 88H17Z"></path>
+          <path d="M60 107 17 32h86Z"></path>
+        </svg>
+      </div>
+      <div class="admin-modal-copy">
+        <p class="eyebrow">Acceso reservado</p>
+        <h2>Panel administrador</h2>
+        <span>Gestion segura de clientes, productos, ventas y Saga logs.</span>
+      </div>
       <label>Usuario<input name="adminUsername" [(ngModel)]="adminLogin.username" autocomplete="username"></label>
       <label>Clave<input type="password" name="adminPassword" [(ngModel)]="adminLogin.password" autocomplete="current-password"></label>
       <div class="alert error" *ngIf="adminAuthError()">{{ adminAuthError() }}</div>
